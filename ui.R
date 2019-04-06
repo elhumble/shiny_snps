@@ -13,15 +13,10 @@ shinyUI(pageWithSidebar(
     conditionalPanel(condition="input.tabselected==1",h4("Upload data"),
                      fileInput("SNPdata", "SNP dataset"),
                      sliderInput("percent_geno", "Select genotyping rate", min = 0, max = 100, value = 0, step = 1),
-                     sliderInput("maf_thresh", "Minor allele frequency threshold", min = 0, max = 1, value = 0, step = 0.01),
-
-                     actionButton("action4", "Submit!")
-    ),
+                     sliderInput("maf_thresh", "Minor allele frequency threshold", min = 0, max = 1, value = 0, step = 0.01)    ),
     
-    conditionalPanel(condition="input.tabselected==2", h3("Summary statistics"),
-                     radioButtons("method1","Choose a method", choices=c("sequence similarity" = 1, "phylogeny" = 2)),
-                     fileInput("UnknownSpecies", "Unknown sequence file (fasta)"),
-                     actionButton("action1", "Submit!")
+    conditionalPanel(condition="input.tabselected==2", h3("Hardy-Weinberg equilibrium"),
+                     h5("gkdgnkfdng fkdgnkd fndkslnf  fsdjklfj fl jklfjdskl fsfkl")
                      ),
     
     conditionalPanel(condition="input.tabselected==3", h3("Filtering"),
@@ -29,9 +24,7 @@ shinyUI(pageWithSidebar(
                      textInput("IndividualizationTheta", "Theta", ""),
                      fileInput("UnknownProfile", "Unknown profile file"),
                      fileInput("ReferenceProfiles", "Reference database file"),
-                     selectInput("ProfileInput", "File type", choices=c("Genetix", "Genalex", "Genepop", "DArT"), selected = "Genepop"),
-                     actionButton("action2", "Submit!")
-                     ),
+                     selectInput("ProfileInput", "File type", choices=c("Genetix", "Genalex", "Genepop", "DArT"), selected = "Genepop")                     ),
     
     
     conditionalPanel(condition="input.tabselected==6", h3("Data")
@@ -54,12 +47,12 @@ shinyUI(pageWithSidebar(
                  plotOutput("maf"),
                  plotOutput("geno")
                )),
-      tabPanel("Summary Statistics", value=2,
-               tableOutput("sum_stats2")
+      tabPanel("Hardy Weinberg Equilibrium", value=2,
+               DT::dataTableOutput("hwe")
       ),
-      tabPanel("Individualization", value=3),
-      tabPanel("Phylogeographic Identification", value =4),
-      tabPanel("Progeny testing", value = 5),
+      tabPanel("Population structure", value=3),
+      tabPanel("Inbreeding", value =4),
+      tabPanel("Relatedness", value = 5),
       tabPanel("Data", value = 6,
                DT::dataTableOutput("mytable")),
       id = "tabselected"
