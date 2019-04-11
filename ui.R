@@ -1,7 +1,7 @@
 library(shiny)
 shinyUI(pageWithSidebar(
   titlePanel(
-    (title = div(img(src="heading_temp.jpg", height = 150, width = 400), align = "center"))
+    (title = div(img(src="heading_temp.jpg", height = 150, width = 400), align = "left"))
     #title = h1("wildlife_detectR", align = "center"))
     #titlePanel((title=div("wildlife detectR",(img(src="heading.jpg", height = 150, width = 150)), align = "center"))
     ),
@@ -13,7 +13,7 @@ shinyUI(pageWithSidebar(
     conditionalPanel(condition="input.tabselected==1",h4("Upload data"),
                      fileInput("SNPdata", "SNP dataset"),
                      sliderInput("percent_geno", "Select genotyping rate", min = 0, max = 100, value = 0, step = 1),
-                     sliderInput("maf_thresh", "Minor allele frequency threshold", min = 0, max = 1, value = 0, step = 0.01)    ),
+                     sliderInput("maf_thresh", "Minor allele frequency threshold", min = 0, max = 0.5, value = 0, step = 0.01)    ),
     
     conditionalPanel(condition="input.tabselected==2", h3("Hardy-Weinberg equilibrium"),
                      h5("gkdgnkfdng fkdgnkd fndkslnf  fsdjklfj fl jklfjdskl fsfkl")
@@ -50,9 +50,12 @@ shinyUI(pageWithSidebar(
       tabPanel("Hardy Weinberg Equilibrium", value=2,
                DT::dataTableOutput("hwe")
       ),
-      tabPanel("Population structure", value=3),
-      tabPanel("Inbreeding", value =4),
-      tabPanel("Relatedness", value = 5),
+      tabPanel("Population structure", value=3,
+               DT::dataTableOutput("fst"),
+               renderPlot("pca")),
+      tabPanel("Inbreeding", value =4,
+               plotOutput("MLH", width = "50%")),
+      #tabPanel("Relatedness", value = 5),
       tabPanel("Data", value = 6,
                DT::dataTableOutput("mytable")),
       id = "tabselected"

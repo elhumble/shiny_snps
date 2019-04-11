@@ -7,9 +7,9 @@ library(dplyr)
 library(inbreedR)
 library(hierfstat)
 library(pegas)
-
+library(kableExtra)
 options(shiny.maxRequestSize=10*1024^2) 
-
+source("theme_emily.R")
 
 shinyServer(
   function(input, output) {
@@ -23,7 +23,15 @@ shinyServer(
       }
      # snps <- read.PLINK(input$SNPdata$datapath)
      input_data <- read.PLINK("data/ORYX_500K_ld.raw")
-      
+     
+     pop <- c("EAD", "EAD", "EAD", "EAD", "EUR",
+              "EUR", "EUR", "EUR", "EUR", "EAD",
+              "EAD", "EAD", "EAD", "EAD", "EAD",
+              "EAD", "AZA", "AZA", "AZA", "AZA")
+     
+     # pop(input_data) <- pop
+     # pca <- glPca(input_data)
+     
      # snps <- fread(input$SNPdata$datapath)
      # snps <- fread("data/pine.txt")
       
@@ -46,23 +54,6 @@ shinyServer(
       #                         c(snps@n.loc, length(snps@ind.names)))
       #   })
 
-     
-      
-      # calculate fst across all loci
-      
-      # matFst <- pairwise.fst(x.gid)
-      
-      
-      # df to genind
-      # df <- data.frame(locusA=c("11","11","12","32"),
-      #                  locusB=c(NA,"34","55","15"),locusC=c("22","22","21","22"))
-      # row.names(df) <- .genlab("genotype",4)
-      # df
-      # 
-      # obj <- df2genind(df, ploidy=2, ncode=1)
-      # obj
-      # tab(obj)
-      
      
      x <- as.matrix(input_data)
      df <- as.data.frame(t(x))
@@ -99,6 +90,11 @@ shinyServer(
 
       })
       
+      
+      
+     
+      
+      
       genind <- reactive({ # needs to be the same as df
         
         SNP_ID <- df()$SNP_ID
@@ -116,30 +112,57 @@ shinyServer(
         colnames(genind) <- SNP_ID
         inds <- rownames(genind)
         genind <- df2genind(genind, ploidy=2, sep = "/", NA.char = "NA")
-        indNames(genind)
+        #indNames(genind)
+        pop(genind) <- pop
         genind <- genind
 
       })
 
       
-      
-      #~~ Summary table
-      output$sum_stats <- renderTable({
+      genos <- reactive({
         
-        summary <- data.frame(c("Number of individuals", "Number of loci",
-                                "Missing data", "He", "Ho"),
-                              c(ncol(maf_geno)-4, nrow(df()), 
-                                summary(genind())$NA.perc,
-                                mean(summary(genind())$Hexp),
-                                mean(summary(genind())$Hobs)))
-
-        # summary <- data.frame(c("Number of individuals", "Number of loci",
-        #                         "Missing data", "He", "Ho"),
-        #                       c(ncol(maf_geno)-4, nrow(df), ade_sum$NA.perc,
-        #                       mean(ade_sum$Hexp), mean(ade_sum$Hobs)))
-        # colnames(summary) <- c("Summary statistics","")
+        genos <- maf_geno %>%
+          #filter(geno_rate > 0 & MAF > 0.2)
+          filter(geno_rate >= input$percent_geno & 
+                   MAF > input$maf_thresh) %>%
+          select(-c(SNP_ID, MAF, ind_per_snp, geno_rate))
+          
+        
+        genos[genos=="2"]<-0
+        genos <- t(genos)
         
       })
+      
+      output$MLH <- renderPlot({
+        
+        mlh <- data.frame(MLH = MLH(genos())) %>%
+          mutate(ID = rownames(.))
+        
+        ggplot(mlh, aes(MLH)) +
+          geom_histogram() +
+          theme_emily()
+        
+      })
+      
+      
+      #~~ Summary table
+      output$sum_stats <- function() {
+        
+        data.frame(x = c("Number of individuals", "Number of loci",
+                                "Missing data (%)", "Expected Heterozygosity", "Observed Heterozygosity"),
+                              b = c(ncol(maf_geno)-4, nrow(df()),
+                                summary(genind())$NA.perc,
+                                mean(summary(genind())$Hexp),
+                                mean(summary(genind())$Hobs))) %>%
+          mutate(b = case_when(grepl("Number", b) ~ round(b),
+                               !grepl("Number", b) ~ signif(b, 1))) %>%
+          `colnames<-`(c("", "")) %>%
+          knitr::kable("html") %>%
+          kable_styling("striped", full_width = F) %>%
+          add_header_above(c("Summary Statistics" = 2), line = F) 
+        
+        }
+        
 
 
       #hwe <- hw.test(genind(), B=0)
@@ -152,29 +175,48 @@ shinyServer(
       })
       
       
-      #
+      output$fst <- DT::renderDataTable({
+        
+        matFst <- pairwise.fst(genind())
+        
+        a <- melt(as.matrix(matFst), varnames = c("pop1", "pop2"))
+        a <- a[a$pop2 > a$pop1,]
+        
+        b <- data.frame(pop = levels(pop(genind()))) %>%
+          mutate(number = 1:nrow(.))
+        
+        fst <- left_join(a, b, by = c("pop1" = "number")) %>%
+          left_join(b, by = c("pop2" = "number")) %>%
+          select(pop.x, pop.y, value) %>%
+          `colnames<-`(c("Population1", "Population2", "FST"))
+        
+
+        })
+
+      
+      # calculate fst across all loci
+      
+      #matFst <- pairwise.fst(x.gid)
+      
+      
+      # df to genind
+      # df <- data.frame(locusA=c("11","11","12","32"),
+      #                  locusB=c(NA,"34","55","15"),locusC=c("22","22","21","22"))
+      # row.names(df) <- .genlab("genotype",4)
+      # df
       # 
-      # pop <- c("A", "A", "A", "A", "A",
-      #          "B", "B", "B", "B", "B",
-      #          "C", "C", "C", "C", "C",
-      #          "D", "D", "D", "D", "D")
-      # 
-      # pop(genind) <- pop
-      # 
-      # genind@pop
-      # matFst <- pairwise.fst(genind)
-      # 
-      # 
+      # obj <- df2genind(df, ploidy=2, ncode=1)
+      # obj
+      # tab(obj)
+      
+      
+      
       output$mytable = DT::renderDataTable({
         df()
       })
       
 
-      
-      output$sum_stats2 <- renderTable({
-        summary <- data.frame(c("Number of individuals", "Number of loci"),
-                              c((ncol(df())-4), nrow(df())))
-      })
+  
       
       output$geno <- renderPlot({
         ggplot(df(), aes(geno_rate)) +
@@ -199,4 +241,8 @@ shinyServer(
   }
   
 )
+
+
+
+
       
