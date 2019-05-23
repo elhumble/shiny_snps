@@ -12,8 +12,7 @@ shinyUI(pageWithSidebar(
     conditionalPanel(condition="input.tabselected==1",h3("Upload data"),
                      fileInput("SNPdata", "SNP dataset (PLINK raw format)"),
                      sliderInput("percent_geno", "Select genotyping rate", min = 0, max = 100, value = 0, step = 1),
-                     sliderInput("maf_thresh", "Minor allele frequency threshold", min = 0, max = 0.5, value = 0, step = 0.01),
-                     ("How do the summary statistics and distributions change as you filter the SNP data for MAF and genotyping rate?")
+                     sliderInput("maf_thresh", "Minor allele frequency threshold", min = 0, max = 0.5, value = 0, step = 0.01)
                      ),
     
     conditionalPanel(condition="input.tabselected==2", h3("Hardy-Weinberg equilibrium"),
