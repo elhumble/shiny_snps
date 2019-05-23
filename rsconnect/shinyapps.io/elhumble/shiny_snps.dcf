@@ -1,0 +1,13 @@
+name: shiny_snps
+title: shiny_snps
+username:
+account: elhumble
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 945315
+bundleId: 2104053
+url: https://elhumble.shinyapps.io/shiny_snps/
+when: 1558621687.00269
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: README.md|data/ORYX_100.raw|data/ORYX_1K.raw|data/ORYX_500K_ld.raw|www/.DS_Store|www/shiny_snps_logo.psd

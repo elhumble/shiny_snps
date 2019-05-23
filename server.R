@@ -8,7 +8,7 @@ library(inbreedR)
 library(hierfstat)
 library(pegas)
 library(kableExtra)
-options(shiny.maxRequestSize=10*1024^2) 
+#options(shiny.maxRequestSize=10*1024^2) 
 source("theme_emily.R")
 
 shinyServer(
@@ -21,13 +21,14 @@ shinyServer(
         # User has not uploaded a file yet
         return(NULL)
       }
-     # snps <- read.PLINK(input$SNPdata$datapath)
-     input_data <- read.PLINK("data/ORYX_500K_ld.raw")
+    input_data <- read.PLINK(input$SNPdata$datapath)
+     #input_data <- read.PLINK("data/ORYX_100_NA.raw")
      
-     pop <- c("EAD", "EAD", "EAD", "EAD", "EUR",
-              "EUR", "EUR", "EUR", "EUR", "EAD",
-              "EAD", "EAD", "EAD", "EAD", "EAD",
-              "EAD", "AZA", "AZA", "AZA", "AZA")
+     pop <- c("SouthGeorgia", "SouthGeorgia", "SouthGeorgia", "SouthGeorgia", "Bouvetoya",
+              "Bouvetoya", "Bouvetoya", "Bouvetoya", "Bouvetoya", "SouthGeorgia",
+              "SouthGeorgia", "SouthGeorgia", "SouthGeorgia", "SouthGeorgia", "SouthGeorgia",
+              "SouthGeorgia", "SouthShetlands", "SouthShetlands", "SouthShetlands", "SouthShetlands")
+     
      
      # pop(input_data) <- pop
      # pca <- glPca(input_data)
@@ -58,7 +59,7 @@ shinyServer(
      x <- as.matrix(input_data)
      df <- as.data.frame(t(x))
      
-     df <- df[c(1:100),]
+     #df <- df[c(1:100),]
      SNP_ID <- rownames(df)
      #df[df=="2"]<-NA
      
@@ -74,7 +75,7 @@ shinyServer(
      
      snp_geno <- df %>%
        mutate(ind_per_snp = ncol(.) - rowSums(is.na(.)),
-              geno_rate = (ind_per_snp / ncol(.))*100) %>%
+              GenoRate = (ind_per_snp / ncol(.))*100) %>%
        mutate(SNP_ID = SNP_ID)
      
      maf_geno <- left_join(maf, snp_geno, by = "SNP_ID")
@@ -83,26 +84,23 @@ shinyServer(
       df <- reactive({
         
         df <- maf_geno %>%
-          select(SNP_ID, MAF, geno_rate) %>%
-         # filter(geno_rate > 0 & MAF > 0.2)
-           filter(geno_rate >= input$percent_geno & 
-                   MAF > input$maf_thresh)
+          select(SNP_ID, MAF, GenoRate) %>%
+          #filter(GenoRate > 50 & MAF > 0)
+           filter(GenoRate >= input$percent_geno & 
+                   MAF >= input$maf_thresh)
 
       })
       
-      
-      
-     
-      
+
       
       genind <- reactive({ # needs to be the same as df
         
         SNP_ID <- df()$SNP_ID
         
         genind <- df() %>%
-          select(-c(MAF, geno_rate)) %>%
+          select(-c(MAF, GenoRate)) %>%
           left_join(maf_geno, by = "SNP_ID") %>%
-          select(-c(SNP_ID, MAF, SNP_ID, ind_per_snp, geno_rate)) %>%
+          select(-c(SNP_ID, MAF, SNP_ID, ind_per_snp, GenoRate)) %>%
           t(.)
         
         genind[genind == 0] <- "1/1" # homozygote reference
@@ -122,13 +120,13 @@ shinyServer(
       genos <- reactive({
         
         genos <- maf_geno %>%
-          #filter(geno_rate > 0 & MAF > 0.2)
-          filter(geno_rate >= input$percent_geno & 
-                   MAF > input$maf_thresh) %>%
-          select(-c(SNP_ID, MAF, ind_per_snp, geno_rate))
+          #filter(GenoRate > 50 & MAF > 0)
+          filter(GenoRate >= input$percent_geno & 
+                   MAF >= input$maf_thresh) %>%
+          select(-c(SNP_ID, MAF, ind_per_snp, GenoRate))
           
         
-        genos[genos=="2"]<-0
+        #genos[genos=="2"]<-0
         genos <- t(genos)
         
       })
@@ -140,7 +138,9 @@ shinyServer(
         
         ggplot(mlh, aes(MLH)) +
           geom_histogram() +
-          theme_emily()
+          theme_emily() +
+          xlab("Multi-locus heterozygosity") + ylab("Frequency")
+        
         
       })
       
@@ -154,8 +154,8 @@ shinyServer(
                                 summary(genind())$NA.perc,
                                 mean(summary(genind())$Hexp),
                                 mean(summary(genind())$Hobs))) %>%
-          mutate(b = case_when(grepl("Number", b) ~ round(b),
-                               !grepl("Number", b) ~ signif(b, 1))) %>%
+          #mutate(b = case_when(grepl("Number", b) ~ round(b),
+          #                     !grepl("Number", b) ~ signif(b, 1))) %>%
           `colnames<-`(c("", "")) %>%
           knitr::kable("html") %>%
           kable_styling("striped", full_width = F) %>%
@@ -219,9 +219,11 @@ shinyServer(
   
       
       output$geno <- renderPlot({
-        ggplot(df(), aes(geno_rate)) +
+        ggplot(df(), aes(GenoRate)) +
           geom_histogram() +
-          xlim(c(0,110))
+          xlim(c(0,110)) +
+          theme_emily() +
+          xlab("Genotyping rate") + ylab("Frequency")
        #   xlim(c(0,nind+1))
         
       })
@@ -230,7 +232,11 @@ shinyServer(
       output$maf <- renderPlot({
         ggplot(df(), aes(MAF)) +
           geom_histogram() +
-          xlim(c(0,0.5))
+          xlim(c(0,0.5)) +
+          theme_emily() +
+          xlab("MAF") + ylab("Frequency")
+        
+        
       })
       
       
