@@ -1,10 +1,17 @@
 library(shiny)
 shinyUI(pageWithSidebar(
-  titlePanel(
-    (title = div(img(src="shiny_snps_logo.jpg", height = 150, width = 400), align = "center"))
+
+    titlePanel(
+    title = div(img(src="shiny_snps_logo.jpg", height = 150, width = 400), align = "center"), windowTitle = "ShinySNPs"
     #title = h1("wildlife_detectR", align = "center"))
     #titlePanel((title=div("wildlife detectR",(img(src="heading.jpg", height = 150, width = 150)), align = "center"))
     ),
+
+    # 
+    # headerPanel(
+    #   HTML('<img src="shiny_snps_logo.jpg" height="50%" width="50%" />'),
+    #   windowTitle="ShinySNPs"
+    # ),
   
     sidebarPanel(
     
